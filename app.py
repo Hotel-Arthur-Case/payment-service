@@ -2,6 +2,7 @@ from flask import Flask, jsonify, request, make_response
 import csv
 import sqlite3
 import datetime
+from io import StringIO
 
 app = Flask(__name__)
 
@@ -57,11 +58,15 @@ def export_payments_csv():
     payments = conn.execute('SELECT * FROM payments').fetchall()
     conn.close()
     
-    output = make_response()
-    writer = csv.writer(output)
+    # Use StringIO to create a file-like object
+    si = StringIO()
+    writer = csv.writer(si)
     writer.writerow(['Payment ID', 'Amount', 'Currency', 'Payment Method', 'Order ID', 'User ID', 'Status', 'Timestamp'])
     for payment in payments:
         writer.writerow(payment)
+    
+    # Get the CSV data from StringIO object
+    output = make_response(si.getvalue())
     output.headers["Content-Disposition"] = "attachment; filename=payments.csv"
     output.headers["Content-type"] = "text/csv"
     return output
